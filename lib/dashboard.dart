@@ -4,7 +4,7 @@ import 'login.dart';
 class DashboardPage extends StatefulWidget {
   final String username;
 
-  const DashboardPage({super.key, required this.username});
+  DashboardPage({required this.username});
 
   @override
   _DashboardPageState createState() => _DashboardPageState();
@@ -12,6 +12,14 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0;
+
+  final List<Map<String, String>> categories = [
+    {'name': 'LUKE CHIANG', 'image': 'assets/luke.jpg'},
+    {'name': 'LANY', 'image': 'assets/lany.jpg'},
+    {'name': 'KESHI', 'image': 'assets/keshi.jpg'},
+    {'name': 'DEPT', 'image': 'assets/dept.jpg'},
+    {'name': 'LAUV', 'image': 'assets/lauv.jpg'},
+  ];
 
   final List<Map<String, String>> songs = [
     {'title': 'LIMBO', 'artist': 'Keshi', 'image': 'assets/keshi.jpg'},
@@ -44,11 +52,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Spotivi'),
+        title: Text('Spotivi'),
       ),
-      body: _currentIndex == 0
-          ? _homePage()
-          : _profilePage(), // Menampilkan halaman berdasarkan _currentIndex
+      body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -66,44 +72,109 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.person,
+              Icons.search,
               color: _currentIndex == 1 ? Colors.blueAccent : Colors.grey,
+            ),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.person,
+              color: _currentIndex == 2 ? Colors.blueAccent : Colors.grey,
             ),
             label: 'Profile',
           ),
         ],
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.blueAccent,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
-        elevation: 8,
+        type: BottomNavigationBarType.fixed, // Agar semua item tetap tampil
+        selectedItemColor: Colors.blueAccent, // Warna item yang dipilih
+        unselectedItemColor: Colors.grey, // Warna item yang tidak dipilih
+        backgroundColor: Colors.white, // Warna latar belakang bottom nav
+        elevation: 8, // Menambahkan bayangan di bawah navbar
       ),
     );
   }
 
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return _homePage();
+      case 1:
+        return _searchPage();
+      case 2:
+        return _profilePage();
+      default:
+        return _homePage();
+    }
+  }
+
   Widget _homePage() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hello, ${widget.username}!',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Categories',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: AssetImage(categories[index]
+                        ['image']!), // Menggunakan DecorationImage
+                    fit: BoxFit
+                        .cover, // Mengatur gambar agar menutupi seluruh kontainer
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    categories[index]['name']!, // Menampilkan nama kategori
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _searchPage() {
     List<Map<String, String>> filteredSongs = songs
         .where((song) =>
             song['title']!.toLowerCase().contains(searchQuery.toLowerCase()) ||
             song['artist']!.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Hello, ${widget.username}!',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
           TextField(
             decoration: InputDecoration(
               hintText: 'Search for songs, artists',
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: Icon(Icons.search),
             ),
             onChanged: (query) {
               setState(() {
@@ -111,31 +182,26 @@ class _DashboardPageState extends State<DashboardPage> {
               });
             },
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Songs',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          SizedBox(height: 16),
+          Expanded(
+            child: filteredSongs.isNotEmpty
+                ? ListView.builder(
+                    itemCount: filteredSongs.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        leading: Image.asset(
+                          filteredSongs[index]['image']!,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        ),
+                        title: Text(filteredSongs[index]['title']!),
+                        subtitle: Text(filteredSongs[index]['artist']!),
+                      );
+                    },
+                  )
+                : Center(child: Text('No results found')),
           ),
-          const SizedBox(height: 8),
-          filteredSongs.isNotEmpty
-              ? ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredSongs.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: Image.asset(
-                        filteredSongs[index]['image']!,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-                      title: Text(filteredSongs[index]['title']!),
-                      subtitle: Text(filteredSongs[index]['artist']!),
-                    );
-                  },
-                )
-              : const Center(child: Text('No results found')),
         ],
       ),
     );
@@ -148,30 +214,30 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 50,
               backgroundImage:
-                  AssetImage('assets/capy.jpg'), // Ganti dengan gambar profil
+                  AssetImage('assets/capy.jpg'), // Replace with profile image
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Hello, ${widget.username}!',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Welcome to your profile!',
               style: TextStyle(fontSize: 18),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  MaterialPageRoute(builder: (context) => LoginPage()),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Log Out',
                 style: TextStyle(color: Colors.black),
               ),
